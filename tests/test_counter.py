@@ -49,6 +49,22 @@ def update_counter(name):
     return {name: COUNTERS[name]}, status.HTTP_200_OK
 
 
+@app.route('/counters/<name>', methods=['DELETE'])
+def delete_counter(name):
+    """Delete a counter"""
+    global COUNTERS
+    if name not in COUNTERS:
+        return {"Message": f"Counter {name} does not exist"}, status.HTTP_404_NOT_FOUND
+    del COUNTERS[name]
+    return '', status.HTTP_204_NO_CONTENT
+
+@app.route('/counters/<name>', methods=['GET'])
+def read_counter(name):
+    """Read a counter"""
+    if name not in COUNTERS:
+        return {"Message": f"Counter {name} does not exist"}, status.HTTP_404_NOT_FOUND
+    return {name: COUNTERS[name]}, status.HTTP_200_OK
+
 
 class CounterTest(TestCase):
     def setUp(self):
@@ -86,3 +102,18 @@ class CounterTest(TestCase):
         # Check that the counter value has increased by 1
         updated_value = update_response.json['testcounter']
         self.assertEqual(updated_value, baseline_value + 1)
+
+
+    def test_delete_a_counter(self):
+        """It should delete a counter"""
+        # Create a new counter
+        create_response = self.client.post('/counters/testdelete')
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+
+        # Delete the counter
+        delete_response = self.client.delete('/counters/testdelete')
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Verify the counter is deleted
+        get_response = self.client.get('/counters/testdelete')
+        self.assertEqual(get_response.status_code, status.HTTP_404_NOT_FOUND)
